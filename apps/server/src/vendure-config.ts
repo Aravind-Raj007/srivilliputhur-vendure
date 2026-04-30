@@ -74,7 +74,7 @@ export const config: VendureConfig = {
             // For local dev, the correct value for assetUrlPrefix should
             // be guessed correctly, but for production it will usually need
             // to be set manually to match your production url.
-            assetUrlPrefix: IS_DEV ? undefined : 'http://13.201.29.47:3000/assets/',
+            assetUrlPrefix: IS_DEV ? undefined : (process.env.ASSET_URL_PREFIX || 'https://admin.sugabramar.com/assets/'),
         }),
         DefaultSchedulerPlugin.init(),
         DefaultJobQueuePlugin.init({ useDatabaseForBuffer: true }),
