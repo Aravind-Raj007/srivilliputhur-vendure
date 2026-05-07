@@ -21,7 +21,8 @@
     "@vendure/graphiql-plugin": "3.6.2",
     "better-sqlite3": "12.9.0",
     "dotenv": "17.4.2",
-    "pg": "^8.20.0"
+    "pg": "^8.20.0",
+    "razorpay": "^2.9.6"
   },
   "devDependencies": {
     "@vendure/cli": "3.6.2",
