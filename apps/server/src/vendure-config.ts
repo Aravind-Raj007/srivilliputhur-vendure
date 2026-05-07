@@ -82,18 +82,22 @@ export const config: VendureConfig = {
         DefaultJobQueuePlugin.init({ useDatabaseForBuffer: true }),
         DefaultSearchPlugin.init({ bufferUpdates: false, indexStockStatus: true }),
         EmailPlugin.init({
-            devMode: true,
-            outputPath: path.join(__dirname, '../static/email/test-emails'),
-            route: 'mailbox',
+            devMode: false as any,
+            transport: {
+                type: 'smtp',
+                host: process.env.EMAIL_HOST || 'smtpout.secureserver.net',
+                port: +(process.env.EMAIL_PORT || 587),
+                secure: false as false, // Port 587 requires false (STARTTLS)
+                auth: {
+                    user: process.env.EMAIL_USER,
+                    pass: process.env.EMAIL_PASS,
+                },
+            },
             handlers: defaultEmailHandlers,
             templateLoader: new FileBasedTemplateLoader(path.join(__dirname, '../static/email/templates')),
             globalTemplateVars: {
-                // The following variables will change depending on your storefront implementation.
-                // Here we are assuming a storefront running at http://localhost:8080.
-                fromAddress: '"example" <noreply@example.com>',
-                verifyEmailAddressUrl: 'http://localhost:8080/verify',
-                passwordResetUrl: 'http://localhost:8080/password-reset',
-                changeEmailAddressUrl: 'http://localhost:8080/verify-email-address-change'
+                fromAddress: '"SugaBramar Orders" <orders@sugabramar.com>',
+                contactUrl: 'https://sugabramar.com/contact',
             },
         }),
         DashboardPlugin.init({
