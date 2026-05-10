@@ -47,14 +47,16 @@ export const config: VendureConfig = {
     dbConnectionOptions: {
         type: 'postgres',
         schema: 'vendure',
-        // See the README.md "Migrations" section for an explanation of
-        // the `synchronize` and `migrations` options.
-        synchronize: true, // Re-enabled to fix schema sync issues causing UI crash
+        // synchronize:false saves egress — schema changes are handled via migrations
+        synchronize: false,
         migrations: [path.join(__dirname, './migrations/*.+(js|ts)')],
         logging: false,
         url: process.env.DATABASE_URL,
         extra: {
-            max: 10, // Increased to allow more concurrent requests on Supabase
+            // Keep pool small to reduce idle connections & egress on Supabase free tier
+            max: 3,
+            idleTimeoutMillis: 30000, // Release idle connections after 30s
+            connectionTimeoutMillis: 5000,
         },
     },
     paymentOptions: {
@@ -80,8 +82,16 @@ export const config: VendureConfig = {
             assetUrlPrefix: IS_DEV ? undefined : (process.env.ASSET_URL_PREFIX || 'https://admin.sugabramar.com/assets/'),
         }),
         DefaultSchedulerPlugin.init(),
-        DefaultJobQueuePlugin.init({ useDatabaseForBuffer: true }),
-        DefaultSearchPlugin.init({ bufferUpdates: false, indexStockStatus: true }),
+        DefaultJobQueuePlugin.init({
+            useDatabaseForBuffer: true,
+            // Poll every 5s instead of default 200ms — massively reduces Supabase polling egress
+            pollInterval: 5000,
+        }),
+        DefaultSearchPlugin.init({
+            // bufferUpdates:true batches search index writes instead of one query per change
+            bufferUpdates: true,
+            indexStockStatus: true,
+        }),
         EmailPlugin.init({
             devMode: false as any,
             transport: {
