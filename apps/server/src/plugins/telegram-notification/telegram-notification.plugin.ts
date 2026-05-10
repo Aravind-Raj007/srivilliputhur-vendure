@@ -139,13 +139,15 @@ View in Admin: ${process.env.ADMIN_URL || 'https://admin.sugabramar.com'}/admin/
 
             doc.fontSize(9).font('Helvetica');
             let currentY = 58;
+            const phone = order.shippingAddress?.phoneNumber || order.customer?.phoneNumber || 'N/A';
             const addressLines = [
                 order.shippingAddress?.streetLine1,
                 order.shippingAddress?.city,
                 order.shippingAddress?.province,
                 `Pincode: ${order.shippingAddress?.postalCode}`,
-                `Mobile: ${order.customer?.phoneNumber || order.customFields?.whatsappNumber || 'N/A'}`,
+                `Mobile: ${phone}`,
             ].filter(line => !!line);
+
 
             for (const line of addressLines) {
                 if (currentY > 220) break;
