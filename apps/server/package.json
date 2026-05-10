@@ -14,6 +14,7 @@
     "start": "concurrently npm:start:*"
   },
   "dependencies": {
+    "@types/pdfkit": "^0.17.6",
     "@vendure/asset-server-plugin": "3.6.2",
     "@vendure/core": "3.6.2",
     "@vendure/dashboard": "3.6.2",
@@ -21,6 +22,7 @@
     "@vendure/graphiql-plugin": "3.6.2",
     "better-sqlite3": "12.9.0",
     "dotenv": "17.4.2",
+    "pdfkit": "^0.18.0",
     "pg": "^8.20.0",
     "razorpay": "^2.9.6"
   },
