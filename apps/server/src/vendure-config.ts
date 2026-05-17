@@ -16,6 +16,7 @@ import path from 'path';
 import { razorpayPaymentHandler } from './razorpay-payment-handler';
 import { ReviewsPlugin } from './plugins/reviews/reviews.plugin';
 import { TelegramNotificationPlugin } from './plugins/telegram-notification/telegram-notification.plugin';
+import { districtShippingCalculator } from './plugins/shipping-calculator';
 
 const IS_DEV = process.env.APP_ENV === 'dev';
 const serverPort = +process.env.PORT || 3000;
@@ -61,6 +62,9 @@ export const config: VendureConfig = {
     },
     paymentOptions: {
         paymentMethodHandlers: [dummyPaymentHandler, razorpayPaymentHandler],
+    },
+    shippingOptions: {
+        shippingCalculators: [districtShippingCalculator],
     },
     // When adding or altering custom field definitions, the database will
     // need to be updated. See the "Migrations" section in README.md.

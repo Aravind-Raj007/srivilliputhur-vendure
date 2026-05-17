@@ -9,13 +9,15 @@ import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Field, FieldLabel, FieldError, FieldGroup } from '@/components/ui/field';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm, Controller, useWatch } from 'react-hook-form';
 import { Loader2 } from 'lucide-react';
 import { useRouter } from '@/i18n/navigation';
 import { useCheckout } from '../checkout-provider';
 import { setShippingAddress, createCustomerAddress } from '../actions';
 import { CountrySelect } from '@/components/shared/country-select';
 import {useTranslations} from 'next-intl';
+import { INDIAN_STATES, TAMIL_NADU_DISTRICTS } from '@/lib/constants/india-regions';
+import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select';
 
 interface ShippingAddressStepProps {
   onComplete: () => void;
@@ -82,6 +84,8 @@ export default function ShippingAddressStep({ onComplete }: ShippingAddressStepP
   const { register, handleSubmit, formState: { errors }, reset, control } = useForm<AddressFormData>({
     defaultValues: getDefaultFormValues()
   });
+
+  const selectedProvince = useWatch({ control, name: 'province' });
 
   const handleSelectExistingAddress = async () => {
     if (!selectedAddressId) return;
@@ -176,20 +180,27 @@ export default function ShippingAddressStep({ onComplete }: ShippingAddressStepP
               </Field>
 
               <Field>
-                <FieldLabel htmlFor="city">{t('city')}</FieldLabel>
-                <Input
-                  id="city"
-                  {...register('city', { required: t('cityRequired') })}
-                />
+                <FieldLabel htmlFor="city">District / City</FieldLabel>
+                {(selectedProvince === 'Tamil Nadu' || selectedProvince === 'TamilNadu') ? (
+                  <NativeSelect id="city" className="w-full" {...register('city', { required: t('cityRequired') })}>
+                    <NativeSelectOption value="">Select District</NativeSelectOption>
+                    {TAMIL_NADU_DISTRICTS.map(d => <NativeSelectOption key={d} value={d}>{d}</NativeSelectOption>)}
+                  </NativeSelect>
+                ) : (
+                  <Input
+                    id="city"
+                    {...register('city', { required: t('cityRequired') })}
+                  />
+                )}
                 <FieldError>{errors.city?.message}</FieldError>
               </Field>
 
               <Field>
-                <FieldLabel htmlFor="province">{t('stateProvince')}</FieldLabel>
-                <Input
-                  id="province"
-                  {...register('province')}
-                />
+                <FieldLabel htmlFor="province">State</FieldLabel>
+                <NativeSelect id="province" className="w-full" {...register('province')}>
+                  <NativeSelectOption value="">Select State</NativeSelectOption>
+                  {INDIAN_STATES.map(s => <NativeSelectOption key={s} value={s}>{s}</NativeSelectOption>)}
+                </NativeSelect>
                 <FieldError>{errors.province?.message}</FieldError>
               </Field>
 
@@ -353,20 +364,27 @@ export default function ShippingAddressStep({ onComplete }: ShippingAddressStepP
                       </Field>
 
                       <Field>
-                        <FieldLabel htmlFor="city">{t('cityLabel')}</FieldLabel>
-                        <Input
-                          id="city"
-                          {...register('city')}
-                        />
+                        <FieldLabel htmlFor="city">District / City</FieldLabel>
+                        {(selectedProvince === 'Tamil Nadu' || selectedProvince === 'TamilNadu') ? (
+                          <NativeSelect id="city" className="w-full" {...register('city', { required: t('cityRequired') })}>
+                            <NativeSelectOption value="">Select District</NativeSelectOption>
+                            {TAMIL_NADU_DISTRICTS.map(d => <NativeSelectOption key={d} value={d}>{d}</NativeSelectOption>)}
+                          </NativeSelect>
+                        ) : (
+                          <Input
+                            id="city"
+                            {...register('city')}
+                          />
+                        )}
                         <FieldError>{errors.city?.message}</FieldError>
                       </Field>
 
                       <Field>
-                        <FieldLabel htmlFor="province">{t('stateProvince')}</FieldLabel>
-                        <Input
-                          id="province"
-                          {...register('province')}
-                        />
+                        <FieldLabel htmlFor="province">State</FieldLabel>
+                        <NativeSelect id="province" className="w-full" {...register('province')}>
+                          <NativeSelectOption value="">Select State</NativeSelectOption>
+                          {INDIAN_STATES.map(s => <NativeSelectOption key={s} value={s}>{s}</NativeSelectOption>)}
+                        </NativeSelect>
                         <FieldError>{errors.province?.message}</FieldError>
                       </Field>
 
@@ -470,20 +488,27 @@ export default function ShippingAddressStep({ onComplete }: ShippingAddressStepP
                   </Field>
 
                   <Field>
-                    <FieldLabel htmlFor="city">{t('cityLabel')}</FieldLabel>
-                    <Input
-                      id="city"
-                      {...register('city')}
-                    />
+                    <FieldLabel htmlFor="city">District / City</FieldLabel>
+                    {(selectedProvince === 'Tamil Nadu' || selectedProvince === 'TamilNadu') ? (
+                      <NativeSelect id="city" className="w-full" {...register('city', { required: t('cityRequired') })}>
+                        <NativeSelectOption value="">Select District</NativeSelectOption>
+                        {TAMIL_NADU_DISTRICTS.map(d => <NativeSelectOption key={d} value={d}>{d}</NativeSelectOption>)}
+                      </NativeSelect>
+                    ) : (
+                      <Input
+                        id="city"
+                        {...register('city')}
+                      />
+                    )}
                     <FieldError>{errors.city?.message}</FieldError>
                   </Field>
 
                   <Field>
-                    <FieldLabel htmlFor="province">{t('stateProvince')}</FieldLabel>
-                    <Input
-                      id="province"
-                      {...register('province')}
-                    />
+                    <FieldLabel htmlFor="province">State</FieldLabel>
+                    <NativeSelect id="province" className="w-full" {...register('province')}>
+                      <NativeSelectOption value="">Select State</NativeSelectOption>
+                      {INDIAN_STATES.map(s => <NativeSelectOption key={s} value={s}>{s}</NativeSelectOption>)}
+                    </NativeSelect>
                     <FieldError>{errors.province?.message}</FieldError>
                   </Field>
 
