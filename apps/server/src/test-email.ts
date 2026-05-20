@@ -42,7 +42,7 @@ async function sendTestOrderEmail() {
             </table>
 
             <p style="margin-top: 30px; font-size: 14px; color: #666;">
-                If you have any questions, contact us at info@sugabramar.com
+                If you have any questions, contact us at orders@sugabramar.com
             </p>
         </div>
     </div>
