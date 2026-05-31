@@ -26,7 +26,7 @@ async function testAutomatedTelegram() {
     // TEST: Different numbers for Phone and WhatsApp
     if (!order.customFields) order.customFields = {};
     order.customFields.whatsappNumber = '7094375704'; // WhatsApp
-    order.customFields.preferredCourier = 'DTDC';
+    order.customFields.preferredCourier = 'ST COURIER';
     
     order.shippingAddress = {
         streetLine1: '109, Meenambigari Nagar',
