@@ -56,10 +56,10 @@ export const config: VendureConfig = {
         logging: false,
         url: process.env.DATABASE_URL,
         extra: {
-            // Keep pool small to reduce idle connections & egress on Supabase free tier
-            max: 3,
+            // Increased pool size and timeouts to prevent Vercel build exhaustion
+            max: 10,
             idleTimeoutMillis: 30000, // Release idle connections after 30s
-            connectionTimeoutMillis: 5000,
+            connectionTimeoutMillis: 15000,
         },
     },
     paymentOptions: {
@@ -122,9 +122,6 @@ export const config: VendureConfig = {
         }),
         DashboardPlugin.init({
             route: 'dashboard',
-            appDir: IS_DEV
-                ? path.join(__dirname, '../dist/dashboard')
-                : path.join(__dirname, 'dashboard'),
         }),
         ReviewsPlugin,
         TelegramNotificationPlugin,

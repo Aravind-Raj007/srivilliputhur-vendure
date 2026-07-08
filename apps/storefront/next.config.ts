@@ -17,6 +17,9 @@ const nextConfig: NextConfig = {
             },
             {
                 hostname: 'localhost'
+            },
+            {
+                hostname: 'admin.sugabramar.com'
             }
         ],
     },
