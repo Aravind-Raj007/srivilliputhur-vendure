@@ -57,9 +57,9 @@ export const config: VendureConfig = {
         logging: false,
         url: process.env.DATABASE_URL,
         extra: {
-            // Increased pool size and timeouts to prevent Vercel build exhaustion
-            max: 10,
-            idleTimeoutMillis: 30000, // Release idle connections after 30s
+            // Increased pool size for high-latency Supabase connection
+            max: 40,
+            idleTimeoutMillis: 60000, // Keep connections alive longer
             connectionTimeoutMillis: 15000,
         },
     },
