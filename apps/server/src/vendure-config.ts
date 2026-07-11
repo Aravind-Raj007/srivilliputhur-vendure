@@ -18,6 +18,7 @@ import { ReviewsPlugin } from './plugins/reviews/reviews.plugin';
 import { TelegramNotificationPlugin } from './plugins/telegram-notification/telegram-notification.plugin';
 import { districtShippingCalculator } from './plugins/shipping-calculator';
 import { CustomSequentialOrderCodeStrategy } from './strategies/custom-order-code-strategy';
+import { RazorpayPlugin } from './plugins/razorpay/razorpay.plugin';
 
 
 const IS_DEV = process.env.APP_ENV === 'dev';
@@ -122,8 +123,10 @@ export const config: VendureConfig = {
         }),
         DashboardPlugin.init({
             route: 'dashboard',
+            appDir: path.join(__dirname, '../dist/dashboard'),
         }),
         ReviewsPlugin,
         TelegramNotificationPlugin,
+        RazorpayPlugin,
     ],
 };
