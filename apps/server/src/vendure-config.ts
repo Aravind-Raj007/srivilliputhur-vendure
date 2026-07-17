@@ -7,6 +7,7 @@ import {
     LanguageCode,
     VendureConfig,
 } from '@vendure/core';
+import { BullMQJobQueuePlugin } from '@vendure/job-queue-plugin/package/bullmq';
 import { defaultEmailHandlers, EmailPlugin, FileBasedTemplateLoader } from '@vendure/email-plugin';
 import { AssetServerPlugin } from '@vendure/asset-server-plugin';
 import { DashboardPlugin } from '@vendure/dashboard/plugin';
@@ -92,11 +93,18 @@ export const config: VendureConfig = {
             assetUrlPrefix: IS_DEV ? undefined : (process.env.ASSET_URL_PREFIX || 'https://admin.sugabramar.com/assets/'),
         }),
         DefaultSchedulerPlugin.init(),
-        DefaultJobQueuePlugin.init({
-            useDatabaseForBuffer: true,
-            // Poll every 5s instead of default 200ms — massively reduces Supabase polling egress
-            pollInterval: 5000,
-        }),
+        // Use BullMQ (Redis-backed) job queue in production for much faster
+        // job processing. Falls back to DB polling if REDIS_URL is not set (dev mode).
+        ...(process.env.REDIS_URL
+            ? [BullMQJobQueuePlugin.init({
+                connection: process.env.REDIS_URL as any,
+            })]
+            : [DefaultJobQueuePlugin.init({
+                useDatabaseForBuffer: true,
+                // Poll every 5s instead of default 200ms to reduce DB load in fallback mode
+                pollInterval: 5000,
+            })]
+        ),
         DefaultSearchPlugin.init({
             // bufferUpdates:true batches search index writes instead of one query per change
             bufferUpdates: true,
