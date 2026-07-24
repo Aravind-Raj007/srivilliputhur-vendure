@@ -17,7 +17,7 @@ import path from 'path';
 import { razorpayPaymentHandler } from './razorpay-payment-handler';
 import { ReviewsPlugin } from './plugins/reviews/reviews.plugin';
 import { TelegramNotificationPlugin } from './plugins/telegram-notification/telegram-notification.plugin';
-import { districtShippingCalculator } from './plugins/shipping-calculator';
+import { productSpecificShippingCalculator } from './plugins/shipping-calculator';
 import { CustomSequentialOrderCodeStrategy } from './strategies/custom-order-code-strategy';
 import { RazorpayPlugin } from './plugins/razorpay/razorpay.plugin';
 
@@ -68,7 +68,7 @@ export const config: VendureConfig = {
         paymentMethodHandlers: [dummyPaymentHandler, razorpayPaymentHandler],
     },
     shippingOptions: {
-        shippingCalculators: [districtShippingCalculator],
+        shippingCalculators: [productSpecificShippingCalculator],
     },
     orderOptions: {
         orderCodeStrategy: new CustomSequentialOrderCodeStrategy(),
@@ -80,6 +80,28 @@ export const config: VendureConfig = {
             { name: 'preferredCourier', type: 'string', public: true, label: [{ languageCode: LanguageCode.en, value: 'Preferred Courier' }] },
             { name: 'whatsappNumber', type: 'string', public: true, label: [{ languageCode: LanguageCode.en, value: 'WhatsApp Number' }] },
             { name: 'fullAddress', type: 'string', public: true, label: [{ languageCode: LanguageCode.en, value: 'Full Address' }] },
+        ],
+        ProductVariant: [
+            {
+                name: 'normalShippingCharge',
+                type: 'int',
+                defaultValue: 0,
+                public: true,
+                nullable: false,
+                ui: { component: 'currency-form-input' },
+                label: [{ languageCode: LanguageCode.en, value: 'Normal Shipping Charge' }],
+                description: [{ languageCode: LanguageCode.en, value: 'Per-item normal shipping charge for this variant.' }],
+            },
+            {
+                name: 'speedShippingCharge',
+                type: 'int',
+                defaultValue: 0,
+                public: true,
+                nullable: false,
+                ui: { component: 'currency-form-input' },
+                label: [{ languageCode: LanguageCode.en, value: 'Speed Shipping Charge' }],
+                description: [{ languageCode: LanguageCode.en, value: 'Per-item express/speed shipping charge for this variant.' }],
+            },
         ],
     },
     plugins: [

@@ -1,106 +1,59 @@
 import { ShippingCalculator, LanguageCode } from '@vendure/core';
 
-export const INDIAN_STATES = [
-  "Andaman and Nicobar Islands",
-  "Andhra Pradesh",
-  "Arunachal Pradesh",
-  "Assam",
-  "Bihar",
-  "Chandigarh",
-  "Chhattisgarh",
-  "Dadra and Nagar Haveli and Daman and Diu",
-  "Delhi",
-  "Goa",
-  "Gujarat",
-  "Haryana",
-  "Himachal Pradesh",
-  "Jammu and Kashmir",
-  "Jharkhand",
-  "Karnataka",
-  "Kerala",
-  "Ladakh",
-  "Lakshadweep",
-  "Madhya Pradesh",
-  "Maharashtra",
-  "Manipur",
-  "Meghalaya",
-  "Mizoram",
-  "Nagaland",
-  "Odisha",
-  "Puducherry",
-  "Punjab",
-  "Rajasthan",
-  "Sikkim",
-  "Tamil Nadu",
-  "Telangana",
-  "Tripura",
-  "Uttar Pradesh",
-  "Uttarakhand",
-  "West Bengal"
-];
-
-// Dynamically generate input fields for every single state
-const stateArgs: Record<string, any> = {};
-
-INDIAN_STATES.forEach(state => {
-    // Generate a safe key like "rate_AndhraPradesh"
-    const key = `rate_${state.replace(/[^a-zA-Z0-9]/g, '')}`;
-    stateArgs[key] = {
-        type: 'int',
-        ui: { component: 'currency-form-input' },
-        description: [{ languageCode: LanguageCode.en, value: `Rate for ${state}` }]
-    };
-});
-
-export const districtShippingCalculator = new ShippingCalculator({
-    code: 'indian-shipping-calculator',
-    description: [{ languageCode: LanguageCode.en, value: 'Indian State based shipping' }],
-    args: {
-        defaultStateRate: { 
-            type: 'int', 
-            ui: { component: 'currency-form-input' },
-            description: [{ languageCode: LanguageCode.en, value: 'Default rate for any unconfigured state' }]
+/**
+ * Product-specific shipping calculator.
+ *
+ * Each ProductVariant has two custom fields:
+ * - normalShippingCharge (int)
+ * - speedShippingCharge (int)
+ *
+ * Total shipping = Σ (variant.customFields[type] × line.quantity)
+ *
+ * The `shippingType` argument allows this calculator to be used for multiple
+ * shipping methods (e.g. Standard Delivery vs. Express Delivery) in the Admin UI.
+ */
+export const productSpecificShippingCalculator = new ShippingCalculator({
+    code: 'product-specific-shipping-calculator',
+    description: [
+        {
+            languageCode: LanguageCode.en,
+            value: 'Product-Specific Shipping Calculator — charges are defined per product variant',
         },
-        ...stateArgs // Spread the 36 state inputs here!
+    ],
+    args: {
+        shippingType: {
+            type: 'string',
+            ui: { 
+                component: 'select-form-input', 
+                options: [
+                    { value: 'normal' },
+                    { value: 'speed' }
+                ] 
+            },
+            description: [{ languageCode: LanguageCode.en, value: 'Which shipping charge to apply (Normal or Speed)' }],
+            defaultValue: 'normal',
+        }
     },
     calculate: (ctx, order, args) => {
-        const address = order.shippingAddress;
-        let price = args.defaultStateRate;
-        
-        const province = address?.province?.trim().toLowerCase();
-        
-        if (province) {
-            // Apply standard state abbreviations mapping
-            let normalizedProvince = province;
-            if (province === 'tn') normalizedProvince = 'tamil nadu';
-            else if (province === 'ap') normalizedProvince = 'andhra pradesh';
-            else if (province === 'kl') normalizedProvince = 'kerala';
-            else if (province === 'ka') normalizedProvince = 'karnataka';
-            else if (province === 'mh') normalizedProvince = 'maharashtra';
-            else if (province === 'dl') normalizedProvince = 'delhi';
-            else if (province === 'ts' || province === 'tg') normalizedProvince = 'telangana';
-            else if (province === 'wb') normalizedProvince = 'west bengal';
-            else if (province === 'up') normalizedProvince = 'uttar pradesh';
+        let totalShipping = 0;
 
-            // Find matching state from our list
-            const matchedState = INDIAN_STATES.find(s => 
-                s.toLowerCase() === normalizedProvince || 
-                s.toLowerCase().replace(/[^a-z0-9]/g, '') === normalizedProvince.replace(/[^a-z0-9]/g, '')
-            );
+        for (const line of order.lines) {
+            const customFields = line.productVariant?.customFields as any;
+            let variantCharge = 0;
 
-            if (matchedState) {
-                const argKey = `rate_${matchedState.replace(/[^a-zA-Z0-9]/g, '')}`;
-                const stateRate = (args as any)[argKey];
-                
-                // If a specific rate was configured for this state (not null/undefined/0), use it
-                if (stateRate !== undefined && stateRate !== null && stateRate > 0) {
-                    price = stateRate;
-                }
+            if (args.shippingType === 'speed') {
+                variantCharge = customFields?.speedShippingCharge ?? 0;
+            } else {
+                // Default to normal
+                variantCharge = customFields?.normalShippingCharge ?? 0;
             }
+
+            // Multiply the per-item charge by the quantity in this line
+            totalShipping += variantCharge * line.quantity;
         }
-        
+
         return {
-            price: price,
+            price: totalShipping,
             priceIncludesTax: ctx.channel.pricesIncludeTax,
             taxRate: 0,
         };
