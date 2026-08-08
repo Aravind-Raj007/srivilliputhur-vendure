@@ -31,7 +31,7 @@ export const razorpayPaymentHandler = new PaymentMethodHandler({
         }
 
         // Verify signature
-        const shasum = crypto.createHmac('sha256', args.keySecret);
+        const shasum = crypto.createHmac('sha256', (args.keySecret || '').trim());
         shasum.update(`${razorpay_order_id}|${razorpay_payment_id}`);
         const digest = shasum.digest('hex');
 

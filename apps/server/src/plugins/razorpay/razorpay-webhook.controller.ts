@@ -13,7 +13,7 @@ export class RazorpayWebhookController {
     @Post()
     async handleWebhook(@Req() req: Request, @Res() res: Response) {
         const signature = req.headers['x-razorpay-signature'] as string;
-        const secret = process.env.RAZORPAY_KEY_SECRET; // Must match your webhook secret in Razorpay Dashboard
+        const secret = (process.env.RAZORPAY_KEY_SECRET || '').trim(); // Must match your webhook secret in Razorpay Dashboard
 
         if (!signature || !secret) {
             Logger.warn('Missing Razorpay signature or secret', 'RazorpayWebhook');
