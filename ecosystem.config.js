@@ -4,12 +4,11 @@ module.exports = {
       name: 'vendure-api',
       script: 'dist/index.js',
       cwd: 'apps/server',
-      // Cluster mode: spawns one process per CPU core — massively improves
-      // throughput and handles concurrent shop/checkout requests in parallel.
-      instances: 'max',
+      // Set to 2 instances max to avoid RAM swapping and DB pool exhaustion on VPS
+      instances: process.env.PM2_INSTANCES ? parseInt(process.env.PM2_INSTANCES, 10) : 2,
       exec_mode: 'cluster',
-      // Auto-restart if the process leaks memory beyond 512 MB
-      max_memory_restart: '512M',
+      // Auto-restart if the process leaks memory beyond 400 MB
+      max_memory_restart: '400M',
       // Restart automatically at 4am (low-traffic) for a fresh slate
       cron_restart: '0 4 * * *',
       // Log files on the server

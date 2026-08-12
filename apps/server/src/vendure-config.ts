@@ -14,6 +14,7 @@ import { DashboardPlugin } from '@vendure/dashboard/plugin';
 import { GraphiqlPlugin } from '@vendure/graphiql-plugin';
 import 'dotenv/config';
 import path from 'path';
+import express from 'express';
 import { razorpayPaymentHandler } from './razorpay-payment-handler';
 import { ReviewsPlugin } from './plugins/reviews/reviews.plugin';
 import { TelegramNotificationPlugin } from './plugins/telegram-notification/telegram-notification.plugin';
@@ -31,6 +32,16 @@ export const config: VendureConfig = {
         adminApiPath: 'admin-api',
         shopApiPath: 'shop-api',
         trustProxy: IS_DEV ? false : 1,
+        middleware: [
+            {
+                handler: express.json({
+                    verify: (req: any, _res, buf) => {
+                        req.rawBody = buf;
+                    },
+                }),
+                route: 'razorpay-webhook',
+            },
+        ],
         // The following options are useful in development mode,
         // but are best turned off for production for security
         // reasons.
@@ -58,10 +69,10 @@ export const config: VendureConfig = {
         logging: false,
         url: process.env.DATABASE_URL,
         extra: {
-            // Increased pool size for high-latency Supabase connection
-            max: 40,
-            idleTimeoutMillis: 60000, // Keep connections alive longer
-            connectionTimeoutMillis: 15000,
+            // Optimized connection pool size to prevent connection exhaustion on Supabase pooler
+            max: +(process.env.DB_POOL_MAX || 10),
+            idleTimeoutMillis: 30000,
+            connectionTimeoutMillis: 10000,
         },
     },
     paymentOptions: {

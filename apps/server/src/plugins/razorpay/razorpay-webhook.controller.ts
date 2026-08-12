@@ -13,27 +13,41 @@ export class RazorpayWebhookController {
     @Post()
     async handleWebhook(@Req() req: Request, @Res() res: Response) {
         const signature = req.headers['x-razorpay-signature'] as string;
-        const secret = (process.env.RAZORPAY_KEY_SECRET || '').trim(); // Must match your webhook secret in Razorpay Dashboard
+        const webhookSecret = (process.env.RAZORPAY_WEBHOOK_SECRET || process.env.RAZORPAY_KEY_SECRET || '').trim();
+        const keySecret = (process.env.RAZORPAY_KEY_SECRET || webhookSecret).trim();
 
-        if (!signature || !secret) {
-            Logger.warn('Missing Razorpay signature or secret', 'RazorpayWebhook');
+        if (!signature || !webhookSecret) {
+            Logger.warn('Missing Razorpay signature or secret configuration', 'RazorpayWebhook');
             return res.status(HttpStatus.BAD_REQUEST).send('Missing signature or secret');
         }
 
-        // Note: Express body-parser has already parsed the JSON. 
-        // Razorpay expects the raw body for exact signature matching, but stringifying usually works 
-        // if no special characters/formatting are mutated by the parser.
-        const bodyStr = JSON.stringify(req.body);
-        const expectedWebhookSignature = crypto
-            .createHmac('sha256', secret)
-            .update(bodyStr)
-            .digest('hex');
+        // Verify HMAC signature using rawBody if available, with stringified fallback
+        const rawBody = (req as any).rawBody;
+        let isSignatureValid = false;
 
-        if (expectedWebhookSignature !== signature) {
-            // Fallback: Sometimes JSON.stringify changes whitespace.
-            // If it fails, check your Razorpay webhook secret config.
+        if (rawBody && Buffer.isBuffer(rawBody)) {
+            const expectedSig = crypto
+                .createHmac('sha256', webhookSecret)
+                .update(rawBody)
+                .digest('hex');
+            if (expectedSig === signature) {
+                isSignatureValid = true;
+            }
+        }
+
+        if (!isSignatureValid) {
+            const bodyStr = JSON.stringify(req.body);
+            const expectedSigStr = crypto
+                .createHmac('sha256', webhookSecret)
+                .update(bodyStr)
+                .digest('hex');
+            if (expectedSigStr === signature) {
+                isSignatureValid = true;
+            }
+        }
+
+        if (!isSignatureValid) {
             Logger.warn('Invalid Razorpay webhook signature', 'RazorpayWebhook');
-            // Depending on strictness, you might return 400. We will proceed with caution or log it.
             return res.status(HttpStatus.BAD_REQUEST).send('Invalid signature');
         }
 
@@ -46,7 +60,7 @@ export class RazorpayWebhookController {
             const paymentEntity = payload.payment?.entity;
             const orderEntity = payload.order?.entity;
 
-            // We expect the frontend to send orderCode in notes
+            // We expect the orderCode in notes or receipt
             const orderCode = paymentEntity?.notes?.orderCode || orderEntity?.notes?.orderCode || orderEntity?.receipt;
 
             if (!orderCode) {
@@ -59,7 +73,7 @@ export class RazorpayWebhookController {
             
             // Reconstruct the client signature so our standard `razorpayPaymentHandler` accepts it
             const expectedPaymentSignature = crypto
-                .createHmac('sha256', secret)
+                .createHmac('sha256', keySecret)
                 .update(`${razorpay_order_id}|${razorpay_payment_id}`)
                 .digest('hex');
 
@@ -67,10 +81,21 @@ export class RazorpayWebhookController {
                 // Create an admin request context
                 const ctx = await this.requestContextService.create({ apiType: 'admin' });
                 
-                const order = await this.orderService.findOneByCode(ctx, orderCode);
+                let order = await this.orderService.findOneByCode(ctx, orderCode);
                 if (!order) {
                     Logger.error(`Order with code ${orderCode} not found`, 'RazorpayWebhook');
                     return res.status(HttpStatus.OK).send('Order not found');
+                }
+
+                // If order is still in AddingItems (race condition over high-latency network), transition first
+                if (order.state === 'AddingItems') {
+                    Logger.info(`Order ${orderCode} is in AddingItems, transitioning to ArrangingPayment before settling`, 'RazorpayWebhook');
+                    const transitionResult = await this.orderService.transitionToState(ctx, order.id, 'ArrangingPayment');
+                    if ('id' in transitionResult) {
+                        order = transitionResult;
+                    } else {
+                        Logger.error(`Failed to transition order ${orderCode} to ArrangingPayment: ${transitionResult.message}`, 'RazorpayWebhook');
+                    }
                 }
 
                 if (order.state === 'ArrangingPayment') {
@@ -86,7 +111,11 @@ export class RazorpayWebhookController {
                         }
                     });
 
-                    Logger.info(`Payment added to order ${orderCode} via webhook`, 'RazorpayWebhook');
+                    if ('id' in result) {
+                        Logger.info(`Payment successfully added to order ${orderCode} via webhook. Payment ID: ${result.id}`, 'RazorpayWebhook');
+                    } else {
+                        Logger.error(`Failed to add payment to order ${orderCode}: ${result.message}`, 'RazorpayWebhook');
+                    }
                 } else {
                     Logger.info(`Order ${orderCode} is in state ${order.state}, ignoring webhook`, 'RazorpayWebhook');
                 }
