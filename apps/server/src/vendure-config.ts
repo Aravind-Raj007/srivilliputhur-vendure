@@ -6,6 +6,7 @@ import {
     CurrencyCode,
     LanguageCode,
     VendureConfig,
+    Asset,
 } from '@vendure/core';
 import { BullMQJobQueuePlugin } from '@vendure/job-queue-plugin/package/bullmq';
 import { defaultEmailHandlers, EmailPlugin, FileBasedTemplateLoader } from '@vendure/email-plugin';
@@ -87,6 +88,25 @@ export const config: VendureConfig = {
     // When adding or altering custom field definitions, the database will
     // need to be updated. See the "Migrations" section in README.md.
     customFields: {
+        Product: [
+            {
+                name: 'videoUrl',
+                type: 'string',
+                public: true,
+                nullable: true,
+                label: [{ languageCode: LanguageCode.en, value: 'Product Video URL' }],
+                description: [{ languageCode: LanguageCode.en, value: 'Direct MP4 link or YouTube/Vimeo embed URL' }],
+            },
+            {
+                name: 'videoAsset',
+                type: 'relation',
+                entity: Asset,
+                public: true,
+                nullable: true,
+                label: [{ languageCode: LanguageCode.en, value: 'Product Video Asset' }],
+                description: [{ languageCode: LanguageCode.en, value: 'Direct video upload (MP4/WebM) from Vendure Asset Server' }],
+            },
+        ],
         Order: [
             { name: 'preferredCourier', type: 'string', public: true, label: [{ languageCode: LanguageCode.en, value: 'Preferred Courier' }] },
             { name: 'whatsappNumber', type: 'string', public: true, label: [{ languageCode: LanguageCode.en, value: 'WhatsApp Number' }] },
