@@ -90,6 +90,15 @@ export const config: VendureConfig = {
     customFields: {
         Product: [
             {
+                name: 'priority',
+                type: 'boolean',
+                defaultValue: false,
+                public: true,
+                nullable: false,
+                label: [{ languageCode: LanguageCode.en, value: 'Priority Product' }],
+                description: [{ languageCode: LanguageCode.en, value: 'Pin this product to show first in product lists across the website' }],
+            },
+            {
                 name: 'videoUrl',
                 type: 'string',
                 public: true,
